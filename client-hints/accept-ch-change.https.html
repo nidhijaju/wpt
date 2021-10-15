@@ -33,7 +33,9 @@ promise_test(t => {
     // Verify that the browser did not include client hints in the request
     // headers when fetching echo_client_hints_received.py.
     assert_false(r.headers.has("device-memory-received"), "device-memory-received");
+    assert_false(r.headers.has("device-memory-deprecated-received"), "device-memory-deprecated-received");
     assert_false(r.headers.has("viewport-width-received"), "viewport-width-received");
+    assert_false(r.headers.has("viewport-width-deprecated-received"), "viewport-width-deprecated-received");
   });
 }, "Precondition: Test that the browser does not have client hints preferences cached");
 
