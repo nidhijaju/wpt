@@ -2,6 +2,7 @@
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <script src="/common/get-host-info.sub.js"></script>
+<script src="/common/dispatcher/dispatcher.js"></script>
 <script src="/common/utils.js"></script>
 <script>
 
@@ -16,6 +17,8 @@
 // exists for in the popup or not. Both are tested here.
 
 const same_origin = get_host_info().HTTP_ORIGIN;
+const executorUrl = uuid =>
+  `/html/browsers/sandboxing/resources/executor.html?uuid=${uuid}&pipe=`;
 
 // Return a promise, resolving when |element| triggers |event_name| event.
 const future = (element, event_name) => {
@@ -29,24 +32,24 @@ const future = (element, event_name) => {
 const runTest = (description, createNewPopup) => {
   promise_test(async test => {
     // Open a same-origin window with a different CSP.
-    const executor_path =
-      "/html/browsers/sandboxing/resources/executor.html?pipe=";
     const csp = "|header(Content-Security-Policy, " +
                 "sandbox" +
                 " allow-scripts" +
                 " allow-popups" +
                 " allow-same-origin" +
-                " allow-popups-to-escape-sandbox";
-    const executor = window.open(same_origin + executor_path + csp);
-    const executor_reply = await future(window, "message");
-    assert_equals(executor_reply.data, "ready");
+                " allow-popups-to-escape-sandbox)";
+    const executor_id = token();
+    window.open(same_origin + executorUrl(executor_id) + csp);
+    const executor = new RemoteContext(executor_id);
 
     const popup_name = token();
     const popup = await createNewPopup(test, popup_name);
 
     // Request the first real load from a DIFFERENT window with different CSPs.
     const first_real_load = future(popup, "load");
-    executor.postMessage(`window.open("about:blank", "${popup_name}");`);
+    await executor.execute_script((popup_name) => {
+      const popup = window.open("about:blank", popup_name)
+    }, [popup_name]);
     await first_real_load;
 
     // The new blank document in the popup must inherit CSPs from |executor|:
