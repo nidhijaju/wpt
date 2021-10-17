@@ -1,0 +1,60 @@
+<!doctype html>
+<title>Testing if integer interpolation is rounded towards positive infinity</title>
+<link rel="help" href="https://drafts.csswg.org/css-values-4/#combine-integers" />
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<style>
+
+#anim-target {
+  animation: anim-z 4s steps(4) forwards 1;
+}
+
+@property --z {
+  syntax: '<number>';
+  initial-value: 0;
+  inherits: true;
+}
+
+@keyframes anim-z {
+  from {
+    z-index: -2;
+    --z: -2;
+  }
+
+  to {
+    z-index: 0;
+    --z: 0;
+  }
+}
+
+</style>
+<div id="anim-target"></div>
+<script>
+var test_description = "Integer interpolation should be rounded towards positive infinity";
+const z_values_for_test = [-1.5, -0.5];
+async_test(
+    t => {
+        function show() {
+            const target = document.getElementById("anim-target");
+            const z_value = Number.parseFloat(getComputedStyle(target).getPropertyValue('--z'));
+            const z_index_value = Number.parseFloat(getComputedStyle(target).getPropertyValue('z-index'));
+
+            if (z_values_for_test.indexOf(z_value) !== -1) {
+                t.step(()=> {
+                    let rounded_z_value = Math.round(z_value);
+                    if (Math.abs(rounded_z_value) === 0)
+                        rounded_z_value = 0;
+                    assert_equals(rounded_z_value, z_index_value, "Interpolation result for z-index should be rounded towards positive infinity");
+                });
+            }
+
+            if (z_value === 0)
+                t.done();
+
+            requestAnimationFrame(show);
+        };
+        show();
+    },
+    test_description
+);
+</script>

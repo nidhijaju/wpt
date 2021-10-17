@@ -1,0 +1,61 @@
+<!doctype html>
+<title>Testing if integer interpolation is rounded towards positive infinity</title>
+<link rel="help" href="https://drafts.csswg.org/css-values-4/#combine-integers" />
+<script src="/resources/testharness.js"></script>
+<script src="/resources/testharnessreport.js"></script>
+<style>
+
+#flex-container {
+    display: flex;
+    animation: anim-order 4s steps(4) forwards 1;
+}
+
+@property --o {
+  syntax: '<number>';
+  initial-value: 0;
+  inherits: true;
+}
+
+@keyframes anim_order {
+  from {
+    order: -2;
+    --o: -2;
+  }
+
+  to {
+    order: 0;
+    --o: 0;
+  }
+}
+
+</style>
+<div id="flex-container"></div>
+<script>
+var test_description = "Integer interpolation should be rounded towards positive infinity";
+const order_values_for_test = [-1.5, -0.5];
+async_test(
+    t => {
+        function show() {
+            const container = document.getElementById("flex-container");
+            const o_value = Number.parseFloat(getComputedStyle(container).getPropertyValue('--o'));
+            const order_value = Number.parseFloat(getComputedStyle(container).getPropertyValue('order'));
+
+            if (order_values_for_test.indexOf(o_value) !== -1) {
+                t.step(()=> {
+                    let rounded_o_value = Math.round(o_value);
+                    if (Math.abs(rounded_o_value) === 0)
+                        rounded_o_value = 0;
+                    assert_equals(rounded_o_value, order_value, "Interpolation result for order should be rounded towards positive infinity");
+                });
+            }
+
+            if (o_value === 0)
+                t.done();
+
+            requestAnimationFrame(show);
+        };
+        show();
+    },
+    test_description
+);
+</script>
